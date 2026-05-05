@@ -46,6 +46,40 @@ int32_t expand_key(uint8_t key[SHA256_LEN], uint32_t out_expanded_key[EXPEND_KEY
     return sta;
 }
 
+/*
+ * Shift the row equally to the line rank
+ */
+int32_t shift_rows(uint8_t matrix[16])
+{
+    for(uint8_t line=1; line<4; line++)
+    {
+        uint8_t first_row = 4*line;
+        uint8_t last_row  = first_row + 3;    
+        for(uint8_t round = 0; round < line; round++)
+        {
+            uint8_t buff = matrix[first_row];
+            matrix[first_row] = matrix[first_row + 1];
+            matrix[first_row + 1] = matrix[first_row + 2];
+            matrix[first_row + 2] = matrix[last_row];
+            matrix[last_row]=buff;
+        }
+    }
+    return 0;
+}
+
+void print_matrix(uint8_t matrix[16])
+{
+    for(uint8_t i=0; i<16; i++)
+    {
+        printf("%x", matrix[i]);
+        if(i%4 == 3)
+        {
+            putchar('\n');
+        }
+    }
+    putchar('\n');
+}
+
 int32_t main(int32_t argc, char *argv[])
 {
     uint8_t sha256_key[SHA256_LEN] = {0};
@@ -65,6 +99,9 @@ int32_t main(int32_t argc, char *argv[])
         sta = expand_key(sha256_key, expanded_key);
 
     }
-
+    uint8_t matrix[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    print_matrix(matrix);
+    shift_rows(matrix);
+    print_matrix(matrix);
     return sta;
 }
