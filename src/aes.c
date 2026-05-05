@@ -71,13 +71,32 @@ void print_matrix(uint8_t matrix[16])
 {
     for(uint8_t i=0; i<16; i++)
     {
-        printf("%x", matrix[i]);
+        printf("%x ", matrix[i]);
         if(i%4 == 3)
         {
             putchar('\n');
         }
     }
     putchar('\n');
+}
+
+int32_t mix_columns(uint8_t matrix[16])
+{
+    uint8_t copy[16];
+    memcpy(copy, matrix, 16*sizeof(uint8_t));
+    for(uint8_t row=0; row<4; row++)
+    {
+        for(uint8_t line=0; line<4; line++)
+        {
+            uint32_t res = 0;
+            for(uint8_t product = 0; product<4; product++)
+            {
+                 res += (copy[row + (4*product)] * column_mixer[(line*4) + product]); 
+            }
+            matrix[line*4+row] = res % 255;
+        }
+    }
+    return 0;
 }
 
 int32_t main(int32_t argc, char *argv[])
@@ -102,6 +121,8 @@ int32_t main(int32_t argc, char *argv[])
     uint8_t matrix[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     print_matrix(matrix);
     shift_rows(matrix);
+    print_matrix(matrix);
+    mix_columns(matrix);
     print_matrix(matrix);
     return sta;
 }
