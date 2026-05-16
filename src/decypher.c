@@ -22,6 +22,15 @@ uint8_t column_unmixer[16] = {0xe, 0xb, 0xd, 0x9,
                               0xd, 0x9, 0xe, 0xb,
                               0xb, 0xd, 0x9, 0xe};
 
+int32_t invert_substitution(uint8_t matrix[16])
+{
+    for(uint32_t i=0; i<16; i++)
+    {
+        matrix[i] = invert_s_box[matrix[i]];
+    }
+    return 0;
+}
+
 int32_t invert_shift_rows(uint8_t matrix[16])
 {
     for(uint8_t line=1; line<4; line++)

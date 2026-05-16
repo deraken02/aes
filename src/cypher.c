@@ -24,18 +24,11 @@ uint8_t column_mixer[16] = {2,3,1,1,
 
 int32_t substitution(uint8_t matrix[16])
 {
-    int32_t sta = 0;
-    if(matrix == NULL)
+    for(uint32_t i=0; i<16; i++)
     {
-        sta = EFAULT;
-    } else
-    {
-        for(uint32_t i=0; i<16; i++)
-        {
-            matrix[i] = s_box[matrix[i]];
-        }
+        matrix[i] = s_box[matrix[i]];
     }
-    return sta;
+    return 0;
 }
 
 int32_t shift_rows(uint8_t matrix[16])
