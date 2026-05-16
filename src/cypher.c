@@ -67,7 +67,7 @@ int32_t mix_columns(uint8_t matrix[16])
             uint32_t res = 0;
             for(uint8_t product = 0; product<4; product++)
             {
-                 res = res ^ ((copy[row + (4*product)] * column_mixer[(line*4) + product])%256); 
+                 res = res ^ galois_field_multiplication(copy[row + (4*product)], column_mixer[(line*4) + product]);
             }
             matrix[line*4+row] = res;
         }

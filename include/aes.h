@@ -8,4 +8,5 @@
 #include <string.h>
 #include <unistd.h>
 
+uint8_t galois_field_multiplication(uint8_t a, uint8_t b);
 #endif

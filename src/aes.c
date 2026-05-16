@@ -8,6 +8,36 @@
 #define EXPEND_KEY_WORDS_NB 60
 
 #define CONCAT_KEY_WORD( a, b, c, d)    (a<<24 | b <<16 | c<<8 | d)
+
+/*
+ * Multiplication in GF(2^8)
+ */
+uint8_t galois_field_multiplication(uint8_t a, uint8_t b)
+{
+    uint8_t product = 0;
+
+    for(uint8_t i = 0; i < 8; i++)
+    {
+        if((b&1) == 1)
+        {
+            product = product ^ a;
+        }
+
+        uint8_t high_bit = a & 0x80;
+
+        a = a*2;
+
+        if(high_bit)
+        {
+            a = a ^ 0x1b;
+        }
+
+        b = b/2;
+    }
+
+    return product;
+}
+
 /**
  * Error code:
  *  -  0 : No errors
