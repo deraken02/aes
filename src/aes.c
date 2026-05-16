@@ -1,4 +1,7 @@
-#include <aes.h>
+#include <cypher.h>
+#include <decypher.h>
+
+#include <stdbool.h>
 #include <stdio.h>
 
 #define SHA256_LEN (256/8)
@@ -13,7 +16,7 @@
 int32_t generate_256bits_key(char *keypass, uint8_t out_key[SHA256_LEN])
 {
     int32_t sta = 0;
-    if(SHA256(keypass, strlen(keypass), out_key) == NULL)
+    if(SHA256((const uint8_t *)keypass, strlen(keypass), out_key) == NULL)
     {
         sta = -1;
     }
@@ -46,57 +49,18 @@ int32_t expand_key(uint8_t key[SHA256_LEN], uint32_t out_expanded_key[EXPEND_KEY
     return sta;
 }
 
-/*
- * Shift the row equally to the line rank
- */
-int32_t shift_rows(uint8_t matrix[16])
-{
-    for(uint8_t line=1; line<4; line++)
-    {
-        uint8_t first_row = 4*line;
-        uint8_t last_row  = first_row + 3;    
-        for(uint8_t round = 0; round < line; round++)
-        {
-            uint8_t buff = matrix[first_row];
-            matrix[first_row] = matrix[first_row + 1];
-            matrix[first_row + 1] = matrix[first_row + 2];
-            matrix[first_row + 2] = matrix[last_row];
-            matrix[last_row]=buff;
-        }
-    }
-    return 0;
-}
-
 void print_matrix(uint8_t matrix[16])
 {
     for(uint8_t i=0; i<16; i++)
     {
         printf("%x ", matrix[i]);
+
         if(i%4 == 3)
         {
             putchar('\n');
         }
     }
     putchar('\n');
-}
-
-int32_t mix_columns(uint8_t matrix[16])
-{
-    uint8_t copy[16];
-    memcpy(copy, matrix, 16*sizeof(uint8_t));
-    for(uint8_t row=0; row<4; row++)
-    {
-        for(uint8_t line=0; line<4; line++)
-        {
-            uint32_t res = 0;
-            for(uint8_t product = 0; product<4; product++)
-            {
-                 res += (copy[row + (4*product)] * column_mixer[(line*4) + product]); 
-            }
-            matrix[line*4+row] = res % 255;
-        }
-    }
-    return 0;
 }
 
 int32_t main(int32_t argc, char *argv[])
@@ -119,10 +83,24 @@ int32_t main(int32_t argc, char *argv[])
 
     }
     uint8_t matrix[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    printf("Start\n");
     print_matrix(matrix);
-    shift_rows(matrix);
+    //printf("Substitution\n");
+    //substitution(matrix);
+    //print_matrix(matrix);
+    //printf("Shift rows\n");
+    //shift_rows(matrix);
+    //print_matrix(matrix);
+    printf("Mix Columns\n");
+    sta = mix_columns(matrix);
     print_matrix(matrix);
-    mix_columns(matrix);
+    printf("Invert Mix Columns\n");
+    sta = unmix_columns(matrix);
     print_matrix(matrix);
+    //revert_shift_rows(matrix);
+    //print_matrix(matrix);
+    //unsubstitution(matrix);
+    //print_matrix(matrix);
+
     return sta;
 }

@@ -5,12 +5,17 @@ project(aes)
 find_package(OpenSSL REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
+add_compile_options(-Wextra -Wall -pedantic)
+set(AES_SOURCES 
+    src/cypher.c
+    src/decypher.c
+    src/aes.c
+)
 
-add_executable(aes src/aes.c)
+add_executable(aes ${AES_SOURCES})
 
 target_include_directories(aes PRIVATE 
     ${CMAKE_SOURCE_DIR}/include
-    ${OPENSSL_LIBRARIES}
 )
 
 target_link_libraries(aes PRIVATE OpenSSL::SSL OpenSSL::Crypto)
