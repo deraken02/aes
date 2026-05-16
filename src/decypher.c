@@ -22,6 +22,23 @@ uint8_t column_unmixer[16] = {0xe, 0xb, 0xd, 0x9,
                               0xd, 0x9, 0xe, 0xb,
                               0xb, 0xd, 0x9, 0xe};
 
+int32_t invert_shift_rows(uint8_t matrix[16])
+{
+    for(uint8_t line=1; line<4; line++)
+    {
+        uint8_t first_row = 4*line;
+        uint8_t last_row  = first_row + 3;    
+        for(uint8_t round = 4; line < round; round--)
+        {
+            uint8_t buff = matrix[first_row];
+            matrix[first_row] = matrix[first_row + 1];
+            matrix[first_row + 1] = matrix[first_row + 2];
+            matrix[first_row + 2] = matrix[last_row];
+            matrix[last_row]=buff;
+        }
+    }
+    return 0;
+}
 int32_t unmix_columns(uint8_t matrix[16])
 {
     uint8_t copy[16];
