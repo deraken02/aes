@@ -17,10 +17,6 @@ uint8_t s_box[256] = { 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x0
     0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16};
 
-uint8_t column_mixer[16] = {2,3,1,1,
-                            1,2,3,1,
-                            1,1,2,3,
-                            3,1,1,2};
 
 int32_t substitution(uint8_t matrix[16])
 {
@@ -33,37 +29,61 @@ int32_t substitution(uint8_t matrix[16])
 
 int32_t shift_rows(uint8_t matrix[16])
 {
-    for(uint8_t line=1; line<4; line++)
+    for(uint8_t row=1; row<4; row++)
     {
-        uint8_t first_row = 4*line;
-        uint8_t last_row  = first_row + 3;    
-        for(uint8_t round = 0; round < line; round++)
+        for(uint8_t shift = 0; shift < row; shift++)
         {
-            uint8_t buff = matrix[first_row];
-            matrix[first_row] = matrix[first_row + 1];
-            matrix[first_row + 1] = matrix[first_row + 2];
-            matrix[first_row + 2] = matrix[last_row];
-            matrix[last_row]=buff;
+            uint8_t buff = matrix[row];
+            matrix[row]     = matrix[row + 4];
+            matrix[row + 4] = matrix[row + 8];
+            matrix[row + 8] = matrix[row + 12];
+            matrix[row + 12] = buff;
+        }
+    }
+
+    return 0;
+}
+
+int32_t mix_columns(uint8_t state[16]) {
+    uint8_t elem_first_col = 0;
+    uint8_t line_begin_index = 0;
+    uint8_t xor_line = 0;
+    uint8_t intermediate_value = 0;
+    for(uint8_t i = 0; i<4; i++)
+    {
+        line_begin_index = i * 4;
+        elem_first_col = state[line_begin_index];
+        xor_line = elem_first_col ^ state[line_begin_index + 1] ^ state[line_begin_index + 2] ^ state[line_begin_index + 3];
+        for(uint8_t col_index = 0; col_index < 4; col_index++)
+        {
+            if(col_index<3)
+            {
+                intermediate_value = state[line_begin_index + col_index] ^ state[line_begin_index + col_index + 1];
+            } else 
+            {
+                intermediate_value = state[line_begin_index + col_index] ^ elem_first_col;
+            }
+
+            intermediate_value = (intermediate_value *2) ^ ((intermediate_value>>7) & 1) * 0x1b;
+            state[line_begin_index + col_index] = intermediate_value ^ xor_line ^ state[line_begin_index + col_index];
         }
     }
     return 0;
 }
 
-int32_t mix_columns(uint8_t matrix[16])
+int32_t round_key(uint8_t matrix[16], uint32_t *key)
 {
-    uint8_t copy[16];
-    memcpy(copy, matrix, 16*sizeof(uint8_t));
-    for(uint8_t row=0; row<4; row++)
+    uint32_t row;
+    for(uint8_t i = 0; i<4; i++)
     {
-        for(uint8_t line=0; line<4; line++)
-        {
-            uint32_t res = 0;
-            for(uint8_t product = 0; product<4; product++)
-            {
-                 res = res ^ galois_field_multiplication(copy[row + (4*product)], column_mixer[(line*4) + product]);
-            }
-            matrix[line*4+row] = res;
-        }
+        row = UINT8_TO_UINT32(matrix[0+(i*4)], matrix[1+(i*4)], matrix[2+(i*4)], matrix[3+(i*4)]);
+        printf("%8x ^ %8x\n", row, key[i]);
+        row = row ^ key[i];
+        
+        matrix[0+(i * 4)] = ((row >> 24) & 0xff);
+        matrix[1+(i * 4)] = ((row >> 16) & 0xff);
+        matrix[2+(i * 4)] = ((row >> 8) & 0xff); 
+        matrix[3+(i * 4)] = (row & 0xff);
     }
     return 0;
 }
