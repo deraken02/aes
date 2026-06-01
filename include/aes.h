@@ -8,5 +8,9 @@
 #include <string.h>
 #include <unistd.h>
 
-uint8_t galois_field_multiplication(uint8_t a, uint8_t b);
+#define SIZEOF_BLOCK (sizeof(uint8_t) * 16)
+#define UINT8_TO_UINT32( a, b, c, d)    (a<<24 | b <<16 | c<<8 | d)
+
+#define TRANSFORM(x)    ((x*2) ^ (((x>>7)&1) * 0x1b))
+
 #endif

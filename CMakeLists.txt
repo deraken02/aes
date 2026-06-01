@@ -5,7 +5,7 @@ project(aes)
 find_package(OpenSSL REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
-add_compile_options(-Wextra -Wall -pedantic)
+add_compile_options(-Wextra -Wall -pedantic -g)
 set(AES_SOURCES 
     src/cypher.c
     src/decypher.c

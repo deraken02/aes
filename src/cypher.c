@@ -64,7 +64,7 @@ int32_t mix_columns(uint8_t state[16]) {
                 intermediate_value = state[line_begin_index + col_index] ^ elem_first_col;
             }
 
-            intermediate_value = (intermediate_value *2) ^ ((intermediate_value>>7) & 1) * 0x1b;
+            intermediate_value = TRANSFORM(intermediate_value);
             state[line_begin_index + col_index] = intermediate_value ^ xor_line ^ state[line_begin_index + col_index];
         }
     }
@@ -77,7 +77,6 @@ int32_t round_key(uint8_t matrix[16], uint32_t *key)
     for(uint8_t i = 0; i<4; i++)
     {
         row = UINT8_TO_UINT32(matrix[0+(i*4)], matrix[1+(i*4)], matrix[2+(i*4)], matrix[3+(i*4)]);
-        printf("%8x ^ %8x\n", row, key[i]);
         row = row ^ key[i];
         
         matrix[0+(i * 4)] = ((row >> 24) & 0xff);

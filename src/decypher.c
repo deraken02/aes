@@ -1,5 +1,6 @@
 #include <decypher.h>
 
+
 uint8_t invert_s_box[256] = {0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -17,10 +18,48 @@ uint8_t invert_s_box[256] = {0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xb
     0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d};
 
-uint8_t column_unmixer[16] = {0xe, 0xb, 0xd, 0x9,
-                              0x9, 0xe, 0xb, 0xd,
-                              0xd, 0x9, 0xe, 0xb,
-                              0xb, 0xd, 0x9, 0xe};
+
+static uint8_t multiply(uint8_t x, uint8_t y)
+{
+    uint8_t ret = 0;
+    uint8_t transform = 0;
+    for(uint8_t i = 0; i<5; i++)
+    {
+        transform = ((y>>i) & 1) * x;
+        if(transform != 0)
+        {
+            for(uint8_t nb_transformation = 0; nb_transformation<i; nb_transformation++)
+            {
+                transform = TRANSFORM(transform);
+            }
+        }
+        ret = ret ^ transform;
+    }
+    return ret;
+}
+
+
+int32_t unmix_columns(uint8_t state[16])
+{
+    uint8_t col1 = 0;
+    uint8_t col2 = 0;
+    uint8_t col3 = 0;
+    uint8_t col4 = 0;
+    for(uint8_t i = 0; i<4; i++)
+    {
+        col1 = state[i*4];
+        col2 = state[i*4 + 1];
+        col3 = state[i*4 + 2];
+        col4 = state[i*4 + 3];
+        
+        state[i*4]      = multiply(col1, 0x0e) ^ multiply(col2, 0x0b) ^ multiply(col3, 0x0d) ^ multiply(col4, 0x09);
+        state[i*4 + 1]  = multiply(col1, 0x09) ^ multiply(col2, 0x0e) ^ multiply(col3, 0x0b) ^ multiply(col4, 0x0d);
+        state[i*4 + 2]  = multiply(col1, 0x0d) ^ multiply(col2, 0x09) ^ multiply(col3, 0x0e) ^ multiply(col4, 0x0b);
+        state[i*4 + 3]  = multiply(col1, 0x0b) ^ multiply(col2, 0x0d) ^ multiply(col3, 0x09) ^ multiply(col4, 0x0e);
+
+    }
+    return 0;
+}
 
 int32_t invert_substitution(uint8_t matrix[16])
 {
@@ -33,38 +72,17 @@ int32_t invert_substitution(uint8_t matrix[16])
 
 int32_t invert_shift_rows(uint8_t matrix[16])
 {
-    for(uint8_t line=1; line<4; line++)
+    for(uint8_t row=1; row<4; row++)
     {
-        uint8_t first_row = 4*line;
-        uint8_t last_row  = first_row + 3;    
-        for(uint8_t round = 4; line < round; round--)
+        for(uint8_t round = 4; row < round; round--)
         {
-            uint8_t buff = matrix[first_row];
-            matrix[first_row] = matrix[first_row + 1];
-            matrix[first_row + 1] = matrix[first_row + 2];
-            matrix[first_row + 2] = matrix[last_row];
-            matrix[last_row]=buff;
+            uint8_t buff    = matrix[row];
+            matrix[row]     = matrix[row + 4];
+            matrix[row + 4] = matrix[row + 8];
+            matrix[row + 8] = matrix[row + 12];
+            matrix[row + 12]= buff;
         }
     }
     return 0;
 }
-int32_t unmix_columns(uint8_t matrix[16])
-{
-    uint8_t copy[16];
-    memcpy(copy, matrix, 16*sizeof(uint8_t));
-    for(uint8_t row=0; row<4; row++)
-    {
-        for(uint8_t line=0; line<4; line++)
-        {
-            uint32_t res = 0;
-            for(uint8_t product = 0; product<4; product++)
-            {
-                 res = res ^ galois_field_multiplication(copy[row + (4*product)], column_unmixer[(line*4) + product]); 
-            }
-            matrix[line*4+row] = res;
-        }
-    }
-    return 0;
-}
-
 
