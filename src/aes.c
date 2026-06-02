@@ -177,8 +177,15 @@ int32_t main(int32_t argc, char *argv[])
         {
             if(strncmp(argv[i], "--passwd", 8) == 0)
             {
-                i++;
-                strncpy(key_pass, argv[i], 256);
+                if(argv[i][8] == '=')
+                {
+                    strncpy(key_pass, &argv[i][9], 256);
+                } else
+                {
+                    i++;
+                    strncpy(key_pass, argv[i], 256);
+                }
+
                 password_found = true;
             } else if(strncmp(argv[i], "--file_in", 9) == 0)
             {
@@ -226,7 +233,10 @@ int32_t main(int32_t argc, char *argv[])
             } else if(strncmp(argv[i], "--decypher", 10) == 0)
             {
                 decypher = true;
-            } else
+            } else if(strncmp(argv[i], "-d", 2) == 0)
+            {
+                decypher = true;
+            }
             {
                 printf("Unknown options %s\n", argv[i]);
             }
