@@ -10,6 +10,7 @@ set(AES_SOURCES
     src/cypher.c
     src/decypher.c
     src/aes.c
+    src/key.c
 )
 
 add_executable(aes ${AES_SOURCES})

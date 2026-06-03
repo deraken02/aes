@@ -1,7 +1,7 @@
 #include <decypher.h>
 
 
-uint8_t invert_s_box[256] = {0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
+static uint8_t invert_s_box[256] = {0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
     0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25,
@@ -39,7 +39,7 @@ static uint8_t multiply(uint8_t x, uint8_t y)
 }
 
 
-int32_t unmix_columns(uint8_t state[16])
+static int32_t unmix_columns(uint8_t state[16])
 {
     uint8_t col1 = 0;
     uint8_t col2 = 0;
@@ -61,7 +61,7 @@ int32_t unmix_columns(uint8_t state[16])
     return 0;
 }
 
-int32_t invert_substitution(uint8_t matrix[16])
+static int32_t invert_substitution(uint8_t matrix[16])
 {
     for(uint32_t i=0; i<16; i++)
     {
@@ -70,7 +70,7 @@ int32_t invert_substitution(uint8_t matrix[16])
     return 0;
 }
 
-int32_t invert_shift_rows(uint8_t matrix[16])
+static int32_t invert_shift_rows(uint8_t matrix[16])
 {
     for(uint8_t row=1; row<4; row++)
     {
@@ -85,4 +85,22 @@ int32_t invert_shift_rows(uint8_t matrix[16])
     }
     return 0;
 }
+
+void *decypher_block(void *argument)
+{
+    cypher_block_arg_st *arg = (cypher_block_arg_st *)argument;
+    round_key(arg->block, &arg->expended_key[EXPEND_KEY_WORDS_NB - 4]);
+    for(uint8_t i = 0; i<NB_OF_ROUND; i++)
+    {
+        invert_shift_rows(arg->block);
+        invert_substitution(arg->block);
+        round_key(arg->block, &arg->expended_key[EXPEND_KEY_WORDS_NB- ((i+2)*4)]);
+        if(i < (NB_OF_ROUND - 1))
+        {
+            unmix_columns(arg->block);
+        }
+    }
+    return argument;
+}
+
 
