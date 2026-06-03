@@ -130,7 +130,7 @@ int32_t main(int32_t argc, char *argv[])
             } else if(strncmp(argv[i], "-d", 2) == 0)
             {
                 decypher = true;
-            }
+            } else
             {
                 printf("Unknown options %s\n", argv[i]);
             }
