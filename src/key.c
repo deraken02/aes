@@ -1,11 +1,15 @@
 #include <key.h>
-#include <openssl/sha.h>
+
+#if !defined(NO_OPENSSL)
+    #include <openssl/sha.h>
+#endif
 
 
 static const uint8_t round_constant[11] = {0x8d, 0x01, 0x02, 0x04,
     0x08, 0x10, 0x20, 0x40,
     0x80, 0x1b, 0x36};
 
+#if !defined(NO_OPENSSL)
 static int32_t generate_256bits_key(char *keypass, uint8_t out_key[SHA_LEN])
 {
     int32_t sta = 0;
@@ -15,6 +19,7 @@ static int32_t generate_256bits_key(char *keypass, uint8_t out_key[SHA_LEN])
     }
     return sta;
 }
+#endif
 
 static uint32_t core(uint32_t key_part)
 {
@@ -27,8 +32,13 @@ static uint32_t core(uint32_t key_part)
 int32_t expend_key(char key_pass[256], uint32_t out_expanded_key[EXPEND_KEY_WORDS_NB])
 {
     int32_t sta = 0;
-    uint8_t key[SHA_LEN_256] = {0};
+    uint8_t key[SHA_LEN];
+#if defined(NO_OPENSSL)
+    memset(key, 48, SHA_LEN);
+    strncpy((char *)key, key_pass, SHA_LEN);
+#else
     sta = generate_256bits_key(key_pass, key); 
+#endif
     if(sta != 0)
     {
         sta = -1;

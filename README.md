@@ -9,8 +9,12 @@ A multi-threaded C implementation of AES
 ## Build
 
 ```bash
-cmake -B build && cmake --build build
+cmake -B build <OPTIONS> && cmake --build build
 ```
+
+Options:
+    -DNO_OPENSSL=TRUE
+        Disable the dependency to openssl
 
 ## Usage
 

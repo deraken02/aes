@@ -4,8 +4,14 @@ project(aes)
 
 find_package(OpenSSL REQUIRED)
 
-include_directories(${OPENSSL_INCLUDE_DIR})
+if(NO_OPENSSL)
+    add_compile_definitions(NO_OPENSSL)
+else()
+    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
 add_compile_options(-Wextra -Wall -pedantic -g)
+
 set(AES_SOURCES 
     src/cypher.c
     src/decypher.c
@@ -19,4 +25,6 @@ target_include_directories(aes PRIVATE
     ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(aes PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+if(NOT NO_OPENSSL)
+    target_link_libraries(aes PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endif()

@@ -15,7 +15,7 @@ int32_t compute(cypher_block_arg_st arg,int32_t io_fd[2],bool decypher, int32_t 
 {
     int32_t sta = 0;
     uint8_t readed = read(io_fd[0], arg.block, 16);
-    while( readed == 16)
+    while(readed == 16)
     {
         if(decypher != true)
         {
