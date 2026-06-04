@@ -5,39 +5,40 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-uint32_t SHA_LEN = SHA_LEN_128;
-uint32_t EXPEND_KEY_WORDS_NB = EXPEND_KEY_WORDS_NB_128;
-uint32_t ROUND_KEY_EXPANSION = ROUND_KEY_EXPANSION_128;
-uint32_t NB_OF_ROUND = NB_OF_ROUND_128;
+uint32_t SHA_LEN = SHA_LEN_256;
+uint32_t EXPEND_KEY_WORDS_NB = EXPEND_KEY_WORDS_NB_256;
+uint32_t ROUND_KEY_EXPANSION = ROUND_KEY_EXPANSION_256;
+uint32_t NB_OF_ROUND = NB_OF_ROUND_256;
 
-int32_t compute(cypher_block_arg_st arg,int32_t io_fd[2],bool decypher, int32_t thread_nb)
+int32_t compute(cypher_block_arg_st *arg,int32_t io_fd[2],bool decypher, int32_t thread_nb)
 {
     int32_t sta = 0;
-    uint8_t readed = read(io_fd[0], arg.block, 16);
+    uint8_t readed = read(io_fd[0], arg->block, 16);
     while(readed == 16)
     {
         if(decypher != true)
         {
-            cypher_block(&arg);
+            cypher_block(arg);
         } else
         {
-            decypher_block(&arg);
+            decypher_block(arg);
         }
-        write(io_fd[1], arg.block, 16);
-        memset(&(arg.block), 0, 16);
-        readed = read(io_fd[0], arg.block, 16);
+        write(io_fd[1], arg->block, 16);
+        memset(&(arg->block), 0, 16);
+        readed = read(io_fd[0], arg->block, 16);
     }
     if(readed != 0)
     {
         if(decypher != true)
         {
-            cypher_block(&arg);
+            cypher_block(arg);
         } else
         {
-            decypher_block(&arg);
+            decypher_block(arg);
         }
-        write(io_fd[1], arg.block, 16);
+        write(io_fd[1], arg->block, 16);
     }
     return sta;
 }
@@ -50,8 +51,7 @@ int32_t main(int32_t argc, char *argv[])
     bool password_found = false;
     bool decypher = false;
     int32_t thread_nb = 1;
-    cypher_block_arg_st arg;
-    memset(&arg, 0, sizeof(cypher_block_arg_st)); 
+    cypher_block_arg_st *arg;
     if(argc == 1)
     {
         printf("Enter password: ");
@@ -148,13 +148,15 @@ int32_t main(int32_t argc, char *argv[])
         }
         return -1;
     }
-    sta = expend_key(key_pass, arg.expended_key);
+    arg = calloc(thread_nb, sizeof(cypher_block_arg_st));
+    sta = expend_key(key_pass, arg->expended_key);
     if(sta != 0)
     {
         printf("Something went wrong with OpenSSL\n");
     } else
     {
         sta = compute(arg, io_fd, decypher, 1);    
+        free(arg);
     }
 
     if(io_fd[0] != 0)

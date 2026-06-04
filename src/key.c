@@ -13,6 +13,7 @@ static const uint8_t round_constant[11] = {0x8d, 0x01, 0x02, 0x04,
 static int32_t generate_256bits_key(char *keypass, uint8_t out_key[SHA_LEN])
 {
     int32_t sta = 0;
+    //unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
     if(SHA256((const uint8_t *)keypass, strlen(keypass), out_key) == NULL)
     {
         sta = -1;
@@ -29,13 +30,13 @@ static uint32_t core(uint32_t key_part)
     return ret;
 }
 
-int32_t expend_key(char key_pass[256], uint32_t out_expanded_key[EXPEND_KEY_WORDS_NB])
+int32_t expend_key(char key_pass[256], uint32_t *out_expanded_key)
 {
     int32_t sta = 0;
-    uint8_t key[SHA_LEN];
+    uint8_t key[32] = {0};
 #if defined(NO_OPENSSL)
-    memset(key, 48, SHA_LEN);
-    strncpy((char *)key, key_pass, SHA_LEN);
+    memset((char *)key, 48, 32);
+    strncpy((char *)key, key_pass, 32);
 #else
     sta = generate_256bits_key(key_pass, key); 
 #endif

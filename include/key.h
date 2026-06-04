@@ -3,7 +3,7 @@
 
 #include <aes.h>
 
-int32_t expend_key(char keypass[256], uint32_t out_expanded_key[EXPEND_KEY_WORDS_NB]);
+int32_t expend_key(char keypass[256], uint32_t *out_expanded_key);
 
 #endif
 
