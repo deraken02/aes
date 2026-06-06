@@ -53,23 +53,22 @@ int32_t compute_multithreaded(cypher_block_arg_st *arg, int32_t io_fd[2], bool d
         for(int32_t j = 0;  j<i; j++)
         {
             pthread_join(thread_id[j],(void **)&ret);
-            if((readed != 16) && (decypher != false))
+            if((decypher != false) && (ret->block[15] == '\0'))
             {
                 eof = strchr((char *)ret->block, '\0');
-                last_char_pos =  1 + ((uintptr_t)eof - (uintptr_t)ret->block);
-                if(last_char_pos <= 16ULL)
+                last_char_pos = ((uintptr_t)eof - (uintptr_t)ret->block);
+                if(last_char_pos < 16ULL)
                 {
                     write(io_fd[1], ret->block, (size_t)last_char_pos);
                 } else
                 {
                     write(io_fd[1], ret->block, 16);
                 }
-
             } else
             {
                 write(io_fd[1], ret->block, 16);
+                memset(&(ret->block), 0, 16);
             }
-            memset(&(ret->block), 0, 16);
         }
     }
     return 0;
@@ -89,31 +88,31 @@ int32_t compute_monothreaded(cypher_block_arg_st *arg,int32_t io_fd[2],bool decy
         } else
         {
             decypher_block(arg);
+            if(arg->block[15] == '\0')
+            {
+                eof = strchr((char *)arg->block, '\0');
+                last_char_pos = ((uintptr_t)eof - (uintptr_t)arg->block);
+                if(last_char_pos < 16ULL)
+                {
+                    write(io_fd[1], arg->block, (size_t)last_char_pos);
+                } else
+                {
+                    write(io_fd[1], arg->block, 16);
+                }
+                break;
+            }
         }
         write(io_fd[1], arg->block, 16);
         memset(&(arg->block), 0, 16);
         readed = read(io_fd[0], arg->block, 16);
     }
-    if(readed != 0)
+    if ((readed != 0) && (decypher != true))
     {
-        if(decypher != true)
-        {
-            cypher_block(arg);
-            write(io_fd[1], arg->block, 16);
-        } else
-        {
-            decypher_block(arg);
-            eof = strchr((char *)arg->block, '\0');
-            last_char_pos = 1 + ((uintptr_t)eof - (uintptr_t)arg->block);
-            if(last_char_pos <= 16ULL)
-            {
-                write(io_fd[1], arg->block, (size_t)last_char_pos);
-            } else
-            {
-                write(io_fd[1], arg->block, 16);
-            }
-
-        }
+        cypher_block(arg);
+        write(io_fd[1], arg->block, 16);
+    } else
+    {
+        ;/* Do nothing */
     }
     return sta;
 }
