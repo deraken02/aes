@@ -35,6 +35,16 @@ By default read the standard input and write in the standard output in cypher mo
 --thread    NB_OF_THREAD
         Number of thread to compute the output
 
+## Example
+
+```bash
+# Cypher
+aes --file_in README.md --file_out README.cy --thread 3 --passwd MonSuperMotDePasse.123
+
+# Decypher
+aes --file_in README.cy --passwd MonSuperMotDePasse.123 -d
+``` 
+
 ## Dependencies
 
 - cmake
