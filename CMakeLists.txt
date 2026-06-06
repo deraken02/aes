@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(aes)
+project(aes C)
 
-find_package(OpenSSL REQUIRED)
 
 if(NO_OPENSSL)
     add_compile_definitions(NO_OPENSSL)
 else()
+    find_package(OpenSSL REQUIRED)
     include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
