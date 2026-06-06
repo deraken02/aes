@@ -4,22 +4,27 @@ on:
     push:
         branches: [ master ]
     pull_request:
-        branches: [ master ] 
+        branches: [ master ]
 
 jobs:
-    tests:
-        runs-on: ubuntu-latest
+  # This workflow contains a single job called "build"
+  tests:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-        - uses: actions/checkout@v2
-    - name: Build default
-      run: cmake -B build_default && cmake --build build_default
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
 
-    - name: Build wihtout openssl
-      run: cmake -B build_no_openssl && cmake --build build_no_openssl
+      - name: Build default
+        run: cmake -B build_default && cmake --build build_default
 
-    - name: Launch suite of tests
-      run: cd test && ./test.sh
+      - name: Build wihtout openssl
+        run: cmake -B build_no_openssl -DNO_OPENSSL=TRUE && cmake --build build_no_openssl
 
-    - name: Cleanup
-      run: rm -fr build_default build_no_openssl
+      - name: Launch suite of tests
+        run: cd test && ./test.sh
 
+      - name: Cleanup
+        run: rm -fr build_default build_no_openssl
