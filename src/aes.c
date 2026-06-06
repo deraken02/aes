@@ -6,16 +6,81 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 uint32_t SHA_LEN = SHA_LEN_256;
 uint32_t EXPEND_KEY_WORDS_NB = EXPEND_KEY_WORDS_NB_256;
 uint32_t ROUND_KEY_EXPANSION = ROUND_KEY_EXPANSION_256;
 uint32_t NB_OF_ROUND = NB_OF_ROUND_256;
 
-int32_t compute(cypher_block_arg_st *arg,int32_t io_fd[2],bool decypher, int32_t thread_nb)
+int32_t compute_multithreaded(cypher_block_arg_st *arg, int32_t io_fd[2], bool decypher, int32_t thread_nb)
+{
+    int32_t sta = 0;
+    cypher_block_arg_st *ret;
+    pthread_t thread_id[thread_nb];
+    uint8_t readed= 16;
+    int32_t i;
+    char *eof;
+    uintptr_t last_char_pos;
+    bool first_loop = true;
+    while(readed == 16)
+    {
+        for(i=0; i < thread_nb; i++)
+        { 
+            readed = read(io_fd[0], arg[i].block, 16);
+            if(readed == 0)
+            {
+                break;
+            }
+            if((first_loop != false) && (i != 0))
+            { 
+                memcpy(arg[i].expended_key, arg[0].expended_key, sizeof(uint32_t)*EXPEND_KEY_WORDS_NB_256);
+            }
+            if(decypher != true)
+            {
+                pthread_create(&thread_id[i], NULL, cypher_block, (void *)&arg[i]);
+            } else
+            {
+                pthread_create(&thread_id[i], NULL, decypher_block, (void *)&arg[i]);
+            }
+            if(readed != 16)
+            {
+                i++;
+                break;
+            }
+        }
+        first_loop=false;
+        for(int32_t j = 0;  j<i; j++)
+        {
+            pthread_join(thread_id[j],(void **)&ret);
+            if((readed != 16) && (decypher != false))
+            {
+                eof = strchr((char *)ret->block, '\0');
+                last_char_pos =  1 + ((uintptr_t)eof - (uintptr_t)ret->block);
+                if(last_char_pos <= 16ULL)
+                {
+                    write(io_fd[1], ret->block, (size_t)last_char_pos);
+                } else
+                {
+                    write(io_fd[1], ret->block, 16);
+                }
+
+            } else
+            {
+                write(io_fd[1], ret->block, 16);
+            }
+            memset(&(ret->block), 0, 16);
+        }
+    }
+    return 0;
+}
+
+int32_t compute_monothreaded(cypher_block_arg_st *arg,int32_t io_fd[2],bool decypher)
 {
     int32_t sta = 0;
     uint8_t readed = read(io_fd[0], arg->block, 16);
+    char *eof;
+    uintptr_t last_char_pos;
     while(readed == 16)
     {
         if(decypher != true)
@@ -34,11 +99,21 @@ int32_t compute(cypher_block_arg_st *arg,int32_t io_fd[2],bool decypher, int32_t
         if(decypher != true)
         {
             cypher_block(arg);
+            write(io_fd[1], arg->block, 16);
         } else
         {
             decypher_block(arg);
+            eof = strchr((char *)arg->block, '\0');
+            last_char_pos = 1 + ((uintptr_t)eof - (uintptr_t)arg->block);
+            if(last_char_pos <= 16ULL)
+            {
+                write(io_fd[1], arg->block, (size_t)last_char_pos);
+            } else
+            {
+                write(io_fd[1], arg->block, 16);
+            }
+
         }
-        write(io_fd[1], arg->block, 16);
     }
     return sta;
 }
@@ -119,8 +194,22 @@ int32_t main(int32_t argc, char *argv[])
                 }
             } else if(strncmp(argv[i], "--thread", 8) == 0)
             {
-                i++;
-                /* To be done */
+                char *endptr;
+                if(argv[i][8] == '=')
+                {
+                    thread_nb = (int)strtol(&argv[i][9], &endptr, 10);
+
+                } else
+                {
+                    i++;
+                    thread_nb = (int)strtol(argv[i], &endptr, 10);
+                }
+                if(endptr[0] != '\0')
+                {
+                    thread_nb = -1;
+                    printf("Invalide thread number\n");
+                    break;
+                }
             } else if(strncmp(argv[i], "--cypher", 8) == 0)
             {
                 decypher = false;
@@ -136,9 +225,12 @@ int32_t main(int32_t argc, char *argv[])
             }
         }
     }
-    if(password_found != true)
+    if(password_found != true || thread_nb <= 0)
     {
-        perror("A password is mandatory");
+        if(password_found != true)
+        {
+            perror("A password is mandatory");
+        }
         if(io_fd[0] != 0)
         {
             close(io_fd[0]);
@@ -153,11 +245,14 @@ int32_t main(int32_t argc, char *argv[])
     if(sta != 0)
     {
         printf("Something went wrong with OpenSSL\n");
+    } else if(thread_nb == 1)
+    {
+        sta = compute_monothreaded(arg, io_fd, decypher);    
     } else
     {
-        sta = compute(arg, io_fd, decypher, 1);    
-        free(arg);
+        sta = compute_multithreaded(arg, io_fd, decypher, thread_nb);    
     }
+    free(arg);
 
     if(io_fd[0] != 0)
     {

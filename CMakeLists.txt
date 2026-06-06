@@ -10,7 +10,7 @@ else()
     include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
-add_compile_options(-Wextra -Wall -pedantic -g)
+add_compile_options(-Wextra -Wall -pedantic -g -lpthread)
 
 set(AES_SOURCES 
     src/cypher.c
