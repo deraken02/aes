@@ -1,0 +1,25 @@
+name: CI
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ] 
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+    - name: Build default
+      run: cmake -B build_default && cmake --build build_default
+
+    - name: Build wihtout openssl
+      run: cmake -B build_no_openssl && cmake --build build_no_openssl
+
+    - name: Launch suite of tests
+      run: cd test && ./test.sh
+
+    - name: Cleanup
+      run: rm -fr build_default build_no_openssl
+
