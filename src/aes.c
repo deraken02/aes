@@ -59,19 +59,19 @@ int32_t compute_multithreaded(cypher_block_arg_st *arg, int32_t io_fd[2], bool d
                 last_char_pos = ((uintptr_t)eof - (uintptr_t)ret->block);
                 if(last_char_pos < 16ULL)
                 {
-                    write(io_fd[1], ret->block, (size_t)last_char_pos);
+                    sta += write(io_fd[1], ret->block, (size_t)last_char_pos);
                 } else
                 {
-                    write(io_fd[1], ret->block, 16);
+                    sta += write(io_fd[1], ret->block, 16);
                 }
             } else
             {
-                write(io_fd[1], ret->block, 16);
+                sta += write(io_fd[1], ret->block, 16);
                 memset(&(ret->block), 0, 16);
             }
         }
     }
-    return 0;
+    return sta;
 }
 
 int32_t compute_monothreaded(cypher_block_arg_st *arg,int32_t io_fd[2],bool decypher)
@@ -94,10 +94,10 @@ int32_t compute_monothreaded(cypher_block_arg_st *arg,int32_t io_fd[2],bool decy
                 last_char_pos = ((uintptr_t)eof - (uintptr_t)arg->block);
                 if(last_char_pos < 16ULL)
                 {
-                    write(io_fd[1], arg->block, (size_t)last_char_pos);
+                    sta += write(io_fd[1], arg->block, (size_t)last_char_pos);
                 } else
                 {
-                    write(io_fd[1], arg->block, 16);
+                    sta += write(io_fd[1], arg->block, 16);
                 }
                 break;
             }
@@ -109,7 +109,7 @@ int32_t compute_monothreaded(cypher_block_arg_st *arg,int32_t io_fd[2],bool decy
     if ((readed != 0) && (decypher != true))
     {
         cypher_block(arg);
-        write(io_fd[1], arg->block, 16);
+        sta += write(io_fd[1], arg->block, 16);
     } else
     {
         ;/* Do nothing */
